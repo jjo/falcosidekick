@@ -21,7 +21,9 @@ require (
 	github.com/jackc/pgx/v5 v5.5.1
 	github.com/nats-io/nats.go v1.31.0
 	github.com/nats-io/stan.go v0.10.4
+	github.com/prometheus/client_golang v1.16.0
 	github.com/prometheus/client_golang v1.17.0
+	github.com/rabbitmq/amqp091-go v1.8.1
 	github.com/rabbitmq/amqp091-go v1.9.0
 	github.com/redis/go-redis/v9 v9.3.0
 	github.com/segmentio/kafka-go v0.4.47
@@ -29,6 +31,7 @@ require (
 	github.com/stretchr/testify v1.8.4
 	github.com/wavefronthq/wavefront-sdk-go v0.15.0
 	github.com/xitongsys/parquet-go v1.6.2
+	github.com/xitongsys/parquet-go-source v0.0.0-20230830030807-0dd610dbff1d
 	github.com/xitongsys/parquet-go-source v0.0.0-20230919034749-0b16411e6349
 	golang.org/x/oauth2 v0.15.0
 	google.golang.org/api v0.154.0
@@ -63,6 +66,7 @@ require (
 	github.com/benbjohnson/clock v1.3.5 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/caio/go-tdigest/v4 v4.0.1 // indirect
+	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/devigned/tab v0.1.1 // indirect
@@ -86,6 +90,7 @@ require (
 	github.com/google/s2a-go v0.1.7 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.2 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.7.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/imdario/mergo v1.0.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect

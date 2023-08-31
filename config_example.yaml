@@ -492,3 +492,12 @@ sumologic:
   # name: "" # Override the default Sumologic Source Name
   # minimumpriority: "" # minimum priority of event for using this output, order is emergency|alert|critical|error|warning|notice|informational|debug or "" (default)
   # checkcert: true # check if ssl certificate of the output is valid (default: true)
+
+otlp:
+  traces:
+    # endpoint: "" # OTLP endpoint in the form of http://{domain or ip}:4318/
+    # synced: false # Set to true if you want traces to be sent synchronously
+    # minimumpriority: "" # minimum priority of event for using this output, order is emergency|alert|critical|error|warning|notice|informational|debug or "" (default)
+    # insecure: false # Set if you want to skip TLS certificate validation
+    # duration: 1000 # Artificial span duration in milliseconds
+    # traceidhash: "" # Trace ID Hash "seed" as gotemplate, to select fields from falcopayload output fields (default: automatic to support Kubernetes' or just container.ID)
