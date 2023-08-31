@@ -32,8 +32,10 @@ func getConfig() *types.Configuration {
 		Alertmanager:    types.AlertmanagerOutputConfig{ExtraLabels: make(map[string]string), ExtraAnnotations: make(map[string]string), CustomSeverityMap: make(map[types.PriorityType]string)},
 		CloudEvents:     types.CloudEventsOutputConfig{Extensions: make(map[string]string)},
 		GCP:             types.GcpOutputConfig{PubSub: types.GcpPubSub{CustomAttributes: make(map[string]string)}},
+		OTLP:            types.OTLPOutputConfig{},
 	}
 
+	otlpSetEnvs()
 	configFile := kingpin.Flag("config-file", "config file").Short('c').ExistingFile()
 	version := kingpin.Flag("version", "falcosidekick version").Short('v').Bool()
 	kingpin.Parse()
@@ -475,6 +477,15 @@ func getConfig() *types.Configuration {
 	v.SetDefault("Dynatrace.CheckCert", true)
 	v.SetDefault("Dynatrace.MinimumPriority", "")
 
+	v.SetDefault("OTLP.Traces.Endpoint", "")
+	v.SetDefault("OTLP.Traces.Synced", false)
+	v.SetDefault("OTLP.Traces.MinimumPriority", "")
+	v.SetDefault("OTLP.Traces.Insecure", false)
+	v.SetDefault("OTLP.Traces.TraceIDHash", "")
+	// NB: Unfortunately falco events don't provide endtime, artificially set
+	// it to 1000ms by default, override-able via OTLP_DURATION environment variable.
+	v.SetDefault("OTLP.Traces.Duration", 1000)
+
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	v.AutomaticEnv()
 	if *configFile != "" {
@@ -739,6 +750,11 @@ func getConfig() *types.Configuration {
 	c.Mattermost.MessageFormatTemplate = getMessageFormatTemplate("Mattermost", c.Mattermost.MessageFormat)
 	c.Googlechat.MessageFormatTemplate = getMessageFormatTemplate("Googlechat", c.Googlechat.MessageFormat)
 	c.Cliq.MessageFormatTemplate = getMessageFormatTemplate("Cliq", c.Cliq.MessageFormat)
+	c.OTLP.Traces.Endpoint = strings.TrimSpace(c.OTLP.Traces.Endpoint)
+	if c.OTLP.Traces.TraceIDHash != "" {
+		c.OTLP.Traces.TraceIDHashTemplate = getMessageFormatTemplate("OTLP", c.OTLP.Traces.TraceIDHash).Option("missingkey=zero")
+	}
+
 	return c
 }
 
