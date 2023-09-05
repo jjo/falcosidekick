@@ -25,7 +25,7 @@ var getTracerProvider = otel.GetTracerProvider
 func (c *Client) newTrace(falcopayload types.FalcoPayload) *trace.Span {
 	traceID, _, err := generateTraceID(falcopayload, c.Config)
 	if err != nil {
-		log.Printf("[ERROR] : Error generating trace id: %v for output fields %v", err, falcopayload.OutputFields)
+		log.Printf("[ERROR] : OLTP Traces - Error generating trace id: %v for output fields %v", err, falcopayload.OutputFields)
 		return nil
 	}
 
