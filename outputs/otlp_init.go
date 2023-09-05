@@ -99,6 +99,7 @@ func (defaultOS) Setenv(key, value string) error {
 
 var otlpOS OS = newDefaultOS()
 
+// NB: 1st match wins (i.e. array of envvars must list preferred envvars mappings first)
 func otlpSetEnv(envs []otlpEnv) string {
 	var value string
 	for _, v := range envs {
