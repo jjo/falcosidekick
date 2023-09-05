@@ -506,7 +506,7 @@ func getConfig() *types.Configuration {
 	v.SetDefault("OTLP.Traces.Endpoint", "")
 	v.SetDefault("OTLP.Traces.Synced", false)
 	v.SetDefault("OTLP.Traces.MinimumPriority", "")
-	v.SetDefault("OTLP.Traces.Insecure", false)
+	v.SetDefault("OTLP.Traces.CheckCert", false)
 	v.SetDefault("OTLP.Traces.TraceIDHash", "")
 	// NB: Unfortunately falco events don't provide endtime, artificially set
 	// it to 1000ms by default, override-able via OTLP_DURATION environment variable.
