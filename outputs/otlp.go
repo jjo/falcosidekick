@@ -73,7 +73,7 @@ func (c *Client) OTLPTracesPost(falcopayload types.FalcoPayload) {
 		go c.CountMetric(Outputs, 1, []string{"output:otlp/traces", "status:error"})
 		c.Stats.OTLP.Add(Error, 1)
 		c.PromStats.Outputs.With(map[string]string{"destination": "otlp/traces", "status": Error}).Inc()
-		log.Printf("[ERROR] : OTLPError generating trace")
+		log.Printf("[ERROR] : OLTP Traces - Error generating trace")
 		return
 	}
 	// Setting the success status
