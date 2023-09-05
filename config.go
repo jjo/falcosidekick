@@ -33,6 +33,7 @@ import (
 	kingpin "github.com/alecthomas/kingpin/v2"
 	"github.com/spf13/viper"
 
+	"github.com/falcosecurity/falcosidekick/outputs"
 	"github.com/falcosecurity/falcosidekick/types"
 )
 
@@ -52,7 +53,7 @@ func getConfig() *types.Configuration {
 		OTLP:            types.OTLPOutputConfig{},
 	}
 
-	otlpSetEnvs()
+	outputs.OtlpSetEnvs()
 	configFile := kingpin.Flag("config-file", "config file").Short('c').ExistingFile()
 	version := kingpin.Flag("version", "falcosidekick version").Short('v').Bool()
 	kingpin.Parse()
@@ -506,7 +507,7 @@ func getConfig() *types.Configuration {
 	v.SetDefault("OTLP.Traces.Endpoint", "")
 	v.SetDefault("OTLP.Traces.Synced", false)
 	v.SetDefault("OTLP.Traces.MinimumPriority", "")
-	v.SetDefault("OTLP.Traces.CheckCert", false)
+	v.SetDefault("OTLP.Traces.CheckCert", true)
 	v.SetDefault("OTLP.Traces.TraceIDHash", "")
 	// NB: Unfortunately falco events don't provide endtime, artificially set
 	// it to 1000ms by default, override-able via OTLP_DURATION environment variable.
