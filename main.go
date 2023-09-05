@@ -765,7 +765,6 @@ func init() {
 			config.OTLP.Traces.Endpoint = ""
 		} else {
 			outputs.EnabledOutputs = append(outputs.EnabledOutputs, "OTLP.Traces")
-			log.Printf("[INFO] : OTLP.Traces=%+v\n", config.OTLP.Traces)
 			otlpShutdown = otlpInit()
 		}
 	}
