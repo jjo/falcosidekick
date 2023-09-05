@@ -815,7 +815,7 @@ type PromStatistics struct {
 type OTLPTraces struct {
 	Endpoint            string
 	Duration            int64
-	Insecure            bool
+	CheckCert           bool
 	Synced              bool
 	MinimumPriority     string
 	TraceIDHash         string
