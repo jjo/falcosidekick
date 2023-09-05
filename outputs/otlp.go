@@ -96,7 +96,7 @@ var (
 func sanitizeOutputFields(falcopayload types.FalcoPayload) map[string]interface{} {
 	ret := make(map[string]interface{})
 	for k, v := range falcopayload.OutputFields {
-		k := strings.Replace(k, ".", "_", -1)
+	k := strings.ReplaceAll(k, ".", "_")
 		ret[k] = v
 	}
 	return ret
