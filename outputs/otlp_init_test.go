@@ -1,4 +1,4 @@
-package main
+package outputs
 
 import (
 	"testing"
@@ -68,7 +68,7 @@ func TestOtlpInit(t *testing.T) {
 	for _, c := range cases {
 		otlpOS = newMockOS()
 		otlpOS.Setenv(c.key, c.value)
-		otlpSetEnvs()
+		OtlpSetEnvs()
 		require.Equal(t, c.wantedValue, otlpOS.Getenv(c.wantedKey), c.msg)
 	}
 }

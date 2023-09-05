@@ -80,6 +80,7 @@ var (
 	promStats                     *types.PromStatistics
 
 	regPromLabels *regexp.Regexp
+	shutDownFuncs []func()
 )
 
 func init() {
@@ -732,12 +733,12 @@ func init() {
 
 	if config.OTLP.Traces.Endpoint != "" {
 		var err error
-		otlpClient, err = outputs.NewClient("OTLP", config.OTLP.Traces.Endpoint, false, false, config, stats, promStats, statsdClient, dogstatsdClient)
+		otlpClient, err = outputs.NewOtlpTracesClient(config, stats, promStats, statsdClient, dogstatsdClient)
 		if err != nil {
 			config.OTLP.Traces.Endpoint = ""
 		} else {
 			outputs.EnabledOutputs = append(outputs.EnabledOutputs, "OTLPTraces")
-			otlpShutdown = otlpInit()
+			shutDownFuncs = append(shutDownFuncs, otlpClient.ShutDownFunc)
 		}
 	}
 
@@ -746,11 +747,9 @@ func init() {
 
 }
 
-var otlpShutdown func()
-
 func main() {
-	if otlpShutdown != nil {
-		defer otlpShutdown()
+	for _, shutdown := range shutDownFuncs {
+		defer shutdown()
 	}
 	if config.Debug {
 		log.Printf("[INFO]  : Debug mode : %v", config.Debug)

@@ -1,4 +1,4 @@
-package main
+package outputs
 
 import (
 	"context"
@@ -6,10 +6,11 @@ import (
 	"log"
 	"os"
 
+	"github.com/falcosecurity/falcosidekick/types"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
-	"go.opentelemetry.io/otel/sdk/resource"
+	otelresource "go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.20.0"
 )
@@ -19,21 +20,21 @@ const (
 	OTLPinstrumentationVersion = "v0.1.0"
 )
 
-func newResource() *resource.Resource {
-	return resource.NewWithAttributes(
+func newResource() *otelresource.Resource {
+	return otelresource.NewWithAttributes(
 		semconv.SchemaURL,
 		semconv.ServiceName(OTLPinstrumentationName),
 		semconv.ServiceVersion(OTLPinstrumentationVersion),
 	)
 }
 
-func installExportPipeline(ctx context.Context) (func(context.Context) error, error) {
+func installExportPipeline(config *types.Configuration, ctx context.Context) (func(context.Context) error, error) {
 	var client otlptrace.Client
-	switch config.OTLP.Traces.Insecure {
+	switch config.OTLP.Traces.CheckCert {
 	case true:
-		client = otlptracehttp.NewClient(otlptracehttp.WithInsecure())
-	case false:
 		client = otlptracehttp.NewClient()
+	case false:
+		client = otlptracehttp.NewClient(otlptracehttp.WithInsecure())
 	}
 
 	exporter, err := otlptrace.New(ctx, client)
@@ -54,19 +55,20 @@ func installExportPipeline(ctx context.Context) (func(context.Context) error, er
 	return tracerProvider.Shutdown, nil
 }
 
-func otlpInit() func() {
+func otlpInit(config *types.Configuration) (func(), error) {
 	ctx := context.Background()
 	// Registers a tracer Provider globally.
-	shutdown, err := installExportPipeline(ctx)
+	shutdown, err := installExportPipeline(config, ctx)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return nil, err
 	}
 	shutDownCallback := func() {
 		if err := shutdown(ctx); err != nil {
-			log.Fatal(err)
+			log.Println(err)
 		}
 	}
-	return shutDownCallback
+	return shutDownCallback, nil
 }
 
 type otlpEnv struct {
@@ -114,7 +116,7 @@ func otlpSetEnv(envs []otlpEnv) string {
 // - OTEL_EXPORTER_OTLP_HEADERS, OTEL_EXPORTER_OTLP_TRACES_HEADERS
 // - OTEL_EXPORTER_OTLP_TIMEOUT, OTEL_EXPORTER_OTLP_TRACES_TIMEOUT
 // - OTEL_EXPORTER_OTLP_PROTOCOL, OTEL_EXPORTER_OTLP_TRACES_PROTOCOL
-func otlpSetEnvs() {
+func OtlpSetEnvs() {
 	otlpSetEnv([]otlpEnv{
 		// Set OTLP_TRACES_ENDPOINT (used by config.OTLP.Traces) from SDK OTLP env vars
 		{Target: "OTLP_TRACES_ENDPOINT", EnvName: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Path: ""},

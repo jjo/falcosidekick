@@ -12,6 +12,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/DataDog/datadog-go/statsd"
 	"github.com/falcosecurity/falcosidekick/types"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -20,6 +21,20 @@ import (
 
 // Unit-testing helper
 var getTracerProvider = otel.GetTracerProvider
+
+func NewOtlpTracesClient(config *types.Configuration, stats *types.Statistics, promStats *types.PromStatistics, statsdClient, dogstatsdClient *statsd.Client) (*Client, error) {
+	otlpClient, err := NewClient("OTLP.Traces", config.OTLP.Traces.Endpoint, false, false, config, stats, promStats, statsdClient, dogstatsdClient)
+	if err != nil {
+		return nil, err
+	}
+	shutDownFunc, err := otlpInit(config)
+	if err != nil {
+		return nil, err
+	}
+	log.Printf("[INFO] : OTLP.Traces=%+v\n", config.OTLP.Traces)
+	otlpClient.ShutDownFunc = shutDownFunc
+	return otlpClient, nil
+}
 
 // newTrace returns a new Trace object.
 func (c *Client) newTrace(falcopayload types.FalcoPayload) *trace.Span {
@@ -96,7 +111,7 @@ var (
 func sanitizeOutputFields(falcopayload types.FalcoPayload) map[string]interface{} {
 	ret := make(map[string]interface{})
 	for k, v := range falcopayload.OutputFields {
-	k := strings.ReplaceAll(k, ".", "_")
+		k := strings.ReplaceAll(k, ".", "_")
 		ret[k] = v
 	}
 	return ret

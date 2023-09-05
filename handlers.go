@@ -410,6 +410,6 @@ func forwardEvent(falcopayload types.FalcoPayload) {
 	}
 
 	if config.OTLP.Traces.Endpoint != "" && (falcopayload.Priority >= types.Priority(config.OTLP.Traces.MinimumPriority)) {
-		go otlpClient.OTLPPost(falcopayload)
+		go otlpClient.OTLPTracesPost(falcopayload)
 	}
 }
