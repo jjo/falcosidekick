@@ -56,7 +56,7 @@ func (c *Client) newTrace(falcopayload types.FalcoPayload) *trace.Span {
 	span.End(trace.WithTimestamp(endTime))
 
 	if c.Config.Debug {
-		log.Printf("[DEBUG] : OTLP payload generated successfully for traceid=%s", span.SpanContext().TraceID())
+		log.Printf("[DEBUG] : OTLP Traces - payload generated successfully for traceid=%s", span.SpanContext().TraceID())
 	}
 
 	return &span
