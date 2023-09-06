@@ -81,7 +81,7 @@ func (c *Client) newTrace(falcopayload types.FalcoPayload) *trace.Span {
 // calling OTEL SDK's tracer.Start() --> span.End(), i.e. no need to explicitly
 // do a HTTP POST
 func (c *Client) OTLPTracesPost(falcopayload types.FalcoPayload) {
-	c.Stats.OTLP.Add(Total, 1)
+	c.Stats.OTLPTraces.Add(Total, 1)
 
 	trace := c.newTrace(falcopayload)
 	if trace == nil {
