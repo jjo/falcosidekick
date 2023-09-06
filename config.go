@@ -57,6 +57,7 @@ func altEnvs(envVars []string) string {
 	}
 	return ""
 }
+
 func getConfig() *types.Configuration {
 	c := &types.Configuration{
 		Customfields:    make(map[string]string),
