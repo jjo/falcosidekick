@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	OTLPinstrumentationName    = "falcosidekick.otlp"
+	OTLPinstrumentationName    = "falco"
 	OTLPinstrumentationVersion = "v0.1.0"
 )
 
