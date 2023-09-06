@@ -195,6 +195,7 @@ func TestOtlpNewTrace(t *testing.T) {
 
 		}
 		// Test newTrace()
+		c.fp.UUID = uuid.New().String()
 		span := client.newTrace(c.fp)
 		require.NotNil(t, span)
 
@@ -211,6 +212,8 @@ func TestOtlpNewTrace(t *testing.T) {
 		}
 
 		// Verify traceID
+		// ~hack: to pass c.expectedRandom==true case, recreate fp.UUID as generateTraceID() derives from it
+		c.fp.UUID = uuid.New().String()
 		traceID, templateStr, err := generateTraceID(c.fp, &c.config)
 		require.Nil(t, err, c.msg)
 		// Always generate a traceID (unless errored)

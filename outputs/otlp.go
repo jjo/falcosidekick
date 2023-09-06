@@ -3,7 +3,6 @@ package outputs
 import (
 	"bytes"
 	"context"
-	"crypto/rand"
 	"encoding/hex"
 	"fmt"
 	"hash/fnv"
@@ -147,26 +146,14 @@ func generateTraceID(falcopayload types.FalcoPayload, config *types.Configuratio
 	switch traceIDStr {
 	case "":
 	case "<no value>":
-		// Template produced no string :(, generate a random 32 character string
-		traceIDStr, err = randomHex(16)
-		if err != nil {
-			return traceID, "", err
-		}
-	default:
-		// Hash the returned template- rendered string to generate a 32 character traceID
-		hash := fnv.New128a()
-		hash.Write([]byte(traceIDStr))
-		digest := hash.Sum(nil)
-		traceIDStr = hex.EncodeToString(digest[:])
+		// Template produced no string, derive the traceID from the payload UUID
+		traceIDStr = falcopayload.UUID
 	}
+	// Hash the returned template- rendered string to generate a 32 character traceID
+	hash := fnv.New128a()
+	hash.Write([]byte(traceIDStr))
+	digest := hash.Sum(nil)
+	traceIDStr = hex.EncodeToString(digest[:])
 	traceID, err = trace.TraceIDFromHex(traceIDStr)
 	return traceID, tplStr, err
-}
-
-func randomHex(n int) (string, error) {
-	bytes := make([]byte, n)
-	if _, err := rand.Read(bytes); err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(bytes), nil
 }
