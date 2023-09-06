@@ -16,10 +16,47 @@ import (
 	kingpin "github.com/alecthomas/kingpin/v2"
 	"github.com/spf13/viper"
 
-	"github.com/falcosecurity/falcosidekick/outputs"
 	"github.com/falcosecurity/falcosidekick/types"
 )
 
+// NB: create OS interface to allow unit-testing
+type OS interface {
+	Getenv(string) string
+	Setenv(string, string) error
+}
+
+type defaultOS struct{}
+
+func newDefaultOS() *defaultOS {
+	return &defaultOS{}
+}
+
+func (defaultOS) Getenv(key string) string {
+	return os.Getenv(key)
+}
+
+func (defaultOS) Setenv(key, value string) error {
+	return os.Setenv(key, value)
+}
+
+var defOS OS = newDefaultOS()
+
+func altEnvs(envVars []string) string {
+	for _, env := range envVars {
+		var envvar, postfix string
+		split := strings.Split(env, "+")
+		switch len(split) {
+		case 1:
+			envvar = split[0]
+		case 2:
+			envvar, postfix = split[0], split[1]
+		}
+		if defOS.Getenv(envvar) != "" {
+			return defOS.Getenv(envvar) + postfix
+		}
+	}
+	return ""
+}
 func getConfig() *types.Configuration {
 	c := &types.Configuration{
 		Customfields:    make(map[string]string),
@@ -36,7 +73,6 @@ func getConfig() *types.Configuration {
 		OTLP:            types.OTLPOutputConfig{},
 	}
 
-	outputs.OtlpSetEnvs()
 	configFile := kingpin.Flag("config-file", "config file").Short('c').ExistingFile()
 	version := kingpin.Flag("version", "falcosidekick version").Short('v').Bool()
 	kingpin.Parse()
@@ -479,7 +515,22 @@ func getConfig() *types.Configuration {
 	v.SetDefault("Dynatrace.CheckCert", true)
 	v.SetDefault("Dynatrace.MinimumPriority", "")
 
-	v.SetDefault("OTLP.Traces.Endpoint", "")
+	v.SetDefault("OTLP.Traces.Endpoint", altEnvs([]string{
+		"OTEL_EXPORTER_OTLP_TRACES_ENDPOINT",
+		"OTEL_EXPORTER_OTLP_ENDPOINT+/v1/traces",
+	}))
+	v.SetDefault("OTLP.Traces.Protocol", altEnvs([]string{
+		"OTEL_EXPORTER_OTLP_TRACES_PROTOCOL",
+		"OTEL_EXPORTER_OTLP_PROTOCOL",
+	}))
+	v.SetDefault("OTLP.Traces.Headers", altEnvs([]string{
+		"OTEL_EXPORTER_OTLP_TRACES_HEADERS",
+		"OTEL_EXPORTER_OTLP_HEADERS",
+	}))
+	v.SetDefault("OTLP.Traces.Timeout", altEnvs([]string{
+		"OTEL_EXPORTER_OTLP_TRACES_TIMEOUT",
+		"OTEL_EXPORTER_OTLP_TIMEOUT",
+	}))
 	v.SetDefault("OTLP.Traces.Synced", false)
 	v.SetDefault("OTLP.Traces.MinimumPriority", "")
 	v.SetDefault("OTLP.Traces.CheckCert", true)

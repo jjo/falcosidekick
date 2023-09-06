@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 
 	"github.com/falcosecurity/falcosidekick/types"
 	"go.opentelemetry.io/otel"
@@ -69,60 +68,4 @@ func otlpInit(config *types.Configuration) (func(), error) {
 		}
 	}
 	return shutDownCallback, nil
-}
-
-type otlpEnv struct {
-	Target  string
-	EnvName string
-	Path    string
-}
-
-// NB: create OS interface to allow unit-testing
-type OS interface {
-	Getenv(string) string
-	Setenv(string, string) error
-}
-
-type defaultOS struct{}
-
-func newDefaultOS() *defaultOS {
-	return &defaultOS{}
-}
-
-func (defaultOS) Getenv(key string) string {
-	return os.Getenv(key)
-}
-
-func (defaultOS) Setenv(key, value string) error {
-	return os.Setenv(key, value)
-}
-
-var otlpOS OS = newDefaultOS()
-
-// NB: 1st match wins (i.e. array of envvars must list preferred envvars mappings first)
-func otlpSetEnv(envs []otlpEnv) string {
-	var value string
-	for _, v := range envs {
-		if otlpOS.Getenv(v.EnvName) != "" {
-			value = otlpOS.Getenv(v.EnvName) + v.Path
-			otlpOS.Setenv(v.Target, value)
-			break
-		}
-	}
-	return value
-}
-
-// See https://opentelemetry.io/docs/concepts/sdk-configuration/otlp-exporter-configuration/
-// FYI for traces, you can also use:
-// - OTEL_EXPORTER_OTLP_HEADERS, OTEL_EXPORTER_OTLP_TRACES_HEADERS
-// - OTEL_EXPORTER_OTLP_TIMEOUT, OTEL_EXPORTER_OTLP_TRACES_TIMEOUT
-// - OTEL_EXPORTER_OTLP_PROTOCOL, OTEL_EXPORTER_OTLP_TRACES_PROTOCOL
-func OtlpSetEnvs() {
-	otlpSetEnv([]otlpEnv{
-		// Set OTLP_TRACES_ENDPOINT (used by config.OTLP.Traces) from SDK OTLP env vars
-		{Target: "OTLP_TRACES_ENDPOINT", EnvName: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", Path: ""},
-		{Target: "OTLP_TRACES_ENDPOINT", EnvName: "OTEL_EXPORTER_OTLP_ENDPOINT", Path: "/v1/traces"},
-		// Set OTEL_EXPORTER_OTLP_TRACES_ENDPOINT (SDK env) from OTLP_TRACES_ENDPOINT if user only set the latter
-		{Target: "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", EnvName: "OTLP_TRACES_ENDPOINT", Path: ""},
-	})
 }

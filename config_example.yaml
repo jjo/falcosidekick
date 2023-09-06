@@ -485,7 +485,10 @@ dynatrace:
   # checkcert: true # check if ssl certificate of the output is valid (default: true)
 otlp:
   traces:
-    # endpoint: "" # OTLP endpoint in the form of http://{domain or ip}:4318/
+    # endpoint: "" # OTLP endpoint in the form of http://{domain or ip}:4318/v1/traces
+    # protocol: "" # OTLP protocol: http or grpc
+    # timeout: "" # OTLP timeout: timeout value in milliseconds.
+    # headers: "" # OTLP headers: list of headers to apply to all outgoing traces in the form of "some-key=some-value,other-key=other-value"
     # synced: false # Set to true if you want traces to be sent synchronously
     # minimumpriority: "" # minimum priority of event for using this output, order is emergency|alert|critical|error|warning|notice|informational|debug or "" (default)
     # checkcert: false # Set if you want to skip TLS certificate validation
