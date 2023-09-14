@@ -98,12 +98,10 @@ func (c *Client) OTLPTracesPost(falcopayload types.FalcoPayload) {
 
 const (
 	templateOption       = "missingkey=zero"
-	kubeTemplateStr      = `{{.cluster}}{{.k8s_pod_name}}{{.k8s_ns_name}}{{.k8s_container_name}}`
 	containerTemplateStr = `{{.container_id}}`
 )
 
 var (
-	kubeTemplate      = template.Must(template.New("").Option(templateOption).Parse(kubeTemplateStr))
 	containerTemplate = template.Must(template.New("").Option(templateOption).Parse(containerTemplateStr))
 )
 
@@ -120,16 +118,9 @@ func renderTraceIDFromTemplate(falcopayload types.FalcoPayload, config *types.Co
 	tplStr := config.OTLP.Traces.TraceIDHash
 	tpl := config.OTLP.Traces.TraceIDHashTemplate
 	outputFields := sanitizeOutputFields(falcopayload)
+	// Default to container.id `{{.container_id}}` as templating "seed" to generate traceID.
 	if tplStr == "" {
-		switch {
-		case outputFields["cluster"] != nil &&
-			outputFields["k8s_pod_name"] != nil &&
-			outputFields["k8s_ns_name"] != nil &&
-			outputFields["k8s_container_name"] != nil:
-			tpl, tplStr = kubeTemplate, kubeTemplateStr
-		default:
-			tpl, tplStr = containerTemplate, containerTemplateStr
-		}
+		tpl, tplStr = containerTemplate, containerTemplateStr
 	}
 	buf := &bytes.Buffer{}
 	if err := tpl.Execute(buf, outputFields); err != nil {
