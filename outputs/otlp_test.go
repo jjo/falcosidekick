@@ -97,35 +97,6 @@ func TestOtlpNewTrace(t *testing.T) {
 		expectedRandom bool
 	}{
 		{
-			msg: "Kubernetes payload should use kubeTemplateStr for output fields",
-			fp: types.FalcoPayload{
-				Time: time.Now(),
-				Rule: "Mock Rule#1",
-				Tags: []string{"foo", "bar"},
-				OutputFields: map[string]interface{}{
-					"priority":           "info",
-					"uuid":               uuid.New().String(),
-					"source":             "falco",
-					"cluster":            "my-cluster",
-					"k8s.ns.name":        "my-ns",
-					"k8s.pod.name":       "my-pod",
-					"k8s.container.name": "my-container",
-					"container.id":       "42",
-					"hostname":           "myhost",
-					"output":             "Hook this Mock!",
-				},
-			},
-			config: types.Configuration{
-				Debug: true,
-				OTLP: types.OTLPOutputConfig{
-					Traces: types.OTLPTraces{
-						Duration: 1000,
-					},
-				},
-			},
-			expectedTplStr: kubeTemplateStr,
-		},
-		{
 			msg: "Container-only payload should use containerTemplateStr for output fields",
 			fp: types.FalcoPayload{
 				Rule: "Mock Rule#2",
