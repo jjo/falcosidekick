@@ -124,7 +124,7 @@ func renderTraceIDFromTemplate(falcopayload types.FalcoPayload, config *types.Co
 	}
 	buf := &bytes.Buffer{}
 	if err := tpl.Execute(buf, outputFields); err != nil {
-		log.Printf("[WARNING] : OTLP - Error expanding template: %v", err)
+		log.Printf("[WARNING] : OTLP Traces - Error expanding template: %v", err)
 	}
 	return buf.String(), tplStr
 }
