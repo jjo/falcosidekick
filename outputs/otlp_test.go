@@ -254,6 +254,6 @@ func TestOtlpNewTrace(t *testing.T) {
 		} else {
 			require.Equal(t, traceID, actualTraceID, c.msg)
 		}
-		hashArray[idx] = traceID.String()
+		hashArray[idx] = actualTraceID.String()
 	}
 }
