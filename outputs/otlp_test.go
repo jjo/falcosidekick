@@ -272,12 +272,12 @@ func TestOtlpNewTrace(t *testing.T) {
 	for idx, c := range cases {
 		if c.mustDifferFrom != nil {
 			for _, i := range c.mustDifferFrom {
-				require.NotEqual(t, hashArray[i-1], hashArray[idx], fmt.Sprintf("cross-case: mustDifferFrom(#%d): %s", i, c.msg))
+				require.NotEqual(t, hashArray[idx], hashArray[i-1], fmt.Sprintf("cross-case: mustDifferFrom(#%d): %s", i, c.msg))
 			}
 		}
 		if c.mustEqualTo != nil {
 			for _, i := range c.mustEqualTo {
-				require.Equal(t, hashArray[i-1], hashArray[idx], fmt.Sprintf("cross-case: mustEqualTo(#%d): %s", i, c.msg))
+				require.Equal(t, hashArray[idx], hashArray[i-1], fmt.Sprintf("cross-case: mustEqualTo(#%d): %s", i, c.msg))
 			}
 		}
 	}
