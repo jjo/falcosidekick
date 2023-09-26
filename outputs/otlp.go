@@ -97,12 +97,12 @@ func (c *Client) OTLPTracesPost(falcopayload types.FalcoPayload) {
 }
 
 const (
-	templateOption       = "missingkey=zero"
-	containerTemplateStr = `{{.container_id}}`
+	templateOption     = "missingkey=zero"
+	defaultTemplateStr = `{{.k8s_ns_name}}{{.k8s_pod_name}}{{.container_name}}{{.container_id}}`
 )
 
 var (
-	containerTemplate = template.Must(template.New("").Option(templateOption).Parse(containerTemplateStr))
+	containerTemplate = template.Must(template.New("").Option(templateOption).Parse(defaultTemplateStr))
 )
 
 func sanitizeOutputFields(falcopayload types.FalcoPayload) map[string]interface{} {
@@ -120,7 +120,7 @@ func renderTraceIDFromTemplate(falcopayload types.FalcoPayload, config *types.Co
 	outputFields := sanitizeOutputFields(falcopayload)
 	// Default to container.id `{{.container_id}}` as templating "seed" to generate traceID.
 	if tplStr == "" {
-		tpl, tplStr = containerTemplate, containerTemplateStr
+		tpl, tplStr = containerTemplate, defaultTemplateStr
 	}
 	buf := &bytes.Buffer{}
 	if err := tpl.Execute(buf, outputFields); err != nil {
