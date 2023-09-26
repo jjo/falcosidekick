@@ -96,8 +96,9 @@ func TestOtlpNewTrace(t *testing.T) {
 		config         types.Configuration
 		expectedTplStr string
 		expectedRandom bool
-		mustDifferFrom []int // traceID must differ from cases (by idx)
-		mustEqualTo    []int // traceID must equal to cases (by idx)
+		actualTraceID  trace.TraceID // save traceID for below cross-cases comparison
+		mustDifferFrom []int         // traceID must differ from cases (by idx)
+		mustEqualTo    []int         // traceID must equal to cases (by idx)
 	}{
 		{
 			msg: "#1 Kubernetes payload using defaultTemplateStr for output fields",
@@ -222,9 +223,7 @@ func TestOtlpNewTrace(t *testing.T) {
 			mustDifferFrom: []int{1, 2, 3, 4, 5}, // also verify that it differs from above cases
 		},
 	}
-	hashArray := make([]string, len(cases))
 	for idx, c := range cases {
-
 		var err error
 		client, _ := NewClient("OTLP", "http://localhost:4317", false, false, &c.config, nil, nil, nil, nil)
 		// Unfortunately config.go:getConfig() is not exported, so replicate its OTLP initialization regarding TraceIDHash != ""
@@ -260,24 +259,25 @@ func TestOtlpNewTrace(t *testing.T) {
 		// Verify expectedTplStr
 		require.Equal(t, c.expectedTplStr, templateStr, c.msg)
 		// Verify test case expecting a random traceID (i.e. when the template rendered to "")
-		actualTraceID := (*span).(*MockSpan).SpanContext().TraceID()
+		c.actualTraceID = (*span).(*MockSpan).SpanContext().TraceID()
+		// Save actualTraceID for 2nd pass comparison against other cases
+		cases[idx].actualTraceID = c.actualTraceID
 		if c.expectedRandom {
-			require.NotEqual(t, traceID, actualTraceID, c.msg)
+			require.NotEqual(t, traceID, c.actualTraceID, c.msg)
 		} else {
-			require.Equal(t, traceID, actualTraceID, c.msg)
+			require.Equal(t, traceID, c.actualTraceID, c.msg)
 		}
-		hashArray[idx] = actualTraceID.String()
 	}
 	// 2nd pass to verify cross-case traceID comparisons (equality, difference)
-	for idx, c := range cases {
+	for _, c := range cases {
 		if c.mustDifferFrom != nil {
 			for _, i := range c.mustDifferFrom {
-				require.NotEqual(t, hashArray[idx], hashArray[i-1], fmt.Sprintf("cross-case: mustDifferFrom(#%d): %s", i, c.msg))
+				require.NotEqual(t, c.actualTraceID, cases[i-1].actualTraceID, fmt.Sprintf("cross-case: mustDifferFrom(#%d): %s", i, c.msg))
 			}
 		}
 		if c.mustEqualTo != nil {
 			for _, i := range c.mustEqualTo {
-				require.Equal(t, hashArray[idx], hashArray[i-1], fmt.Sprintf("cross-case: mustEqualTo(#%d): %s", i, c.msg))
+				require.Equal(t, c.actualTraceID, cases[i-1].actualTraceID, fmt.Sprintf("cross-case: mustEqualTo(#%d): %s", i, c.msg))
 			}
 		}
 	}
