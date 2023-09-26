@@ -496,11 +496,11 @@ sumologic:
 otlp:
   traces:
     # endpoint: "" # OTLP endpoint in the form of http://{domain or ip}:4318/v1/traces
-    # protocol: "" # OTLP protocol: http or grpc
-    # timeout: "" # OTLP timeout: timeout value in milliseconds.
-    # headers: "" # OTLP headers: list of headers to apply to all outgoing traces in the form of "some-key=some-value,other-key=other-value"
-    # synced: false # Set to true if you want traces to be sent synchronously
+    # protocol: "" # OTLP protocol: (default: "" which uses SDK default: http)
+    # timeout: "" # OTLP timeout: timeout value in milliseconds (default: "" which uses SDK default: 10000)
+    # headers: "" # OTLP headers: list of headers to apply to all outgoing traces in the form of "some-key=some-value,other-key=other-value" (default: "")
+    # synced: false # Set to true if you want traces to be sent synchronously (default: false)
     # minimumpriority: "" # minimum priority of event for using this output, order is emergency|alert|critical|error|warning|notice|informational|debug or "" (default)
-    # checkcert: false # Set if you want to skip TLS certificate validation
-    # duration: 1000 # Artificial span duration in milliseconds
+    # checkcert: true # Set if you want to skip TLS certificate validation (default: true)
+    # duration: 1000 # Artificial span duration in milliseconds (default: 1000)
     # traceidhash: "" # Trace ID Hash "seed" as gotemplate, to select fields from falcopayload output fields (default: `{{container_id}}` to use `container.id`)
