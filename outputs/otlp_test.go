@@ -95,9 +95,56 @@ func TestOtlpNewTrace(t *testing.T) {
 		config         types.Configuration
 		expectedTplStr string
 		expectedRandom bool
+		mustDifferFrom int // traceID must differ from case (by idx)
+		mustEqualto    int // traceID must equal to case (by idx)
 	}{
 		{
-			msg: "Container-only payload should use containerTemplateStr for output fields",
+			msg: "#1 Kubernetes payload using defaultTemplateStr for output fields",
+			fp: types.FalcoPayload{
+				Rule: "Mock Rule#2",
+				OutputFields: map[string]interface{}{
+					"k8s.ns.name":        "my-ns",
+					"k8s.pod.name":       "my-pod-name",
+					"k8s.container.name": "my-container-name",
+					"container.id":       "42",
+				},
+			},
+			config: types.Configuration{
+				Debug: true,
+				OTLP: types.OTLPOutputConfig{
+					Traces: types.OTLPTraces{
+						Duration: 1000,
+					},
+				},
+			},
+			expectedTplStr: defaultTemplateStr,
+		},
+		{
+			msg: "#2 Kubernetes payload using defaultTemplateStr for output fields must produce same hash",
+			fp: types.FalcoPayload{
+				Rule: "Mock Rule#2",
+				OutputFields: map[string]interface{}{
+					"k8s.ns.name":        "my-ns",
+					"k8s.pod.name":       "my-pod-name",
+					"k8s.container.name": "my-container-name",
+					"container.id":       "42",
+					"dummy.field":        "foo",
+					"other.field":        "bar",
+				},
+			},
+			config: types.Configuration{
+				Debug: true,
+				OTLP: types.OTLPOutputConfig{
+					Traces: types.OTLPTraces{
+						Duration: 1000,
+					},
+				},
+			},
+			expectedTplStr: defaultTemplateStr,
+			mustEqualto:    1, // also verify that it equals case #1 from same rendered fields
+		},
+		{
+			msg: "#3 Container-only payload using defaultTemplateStr for output fields",
 			fp: types.FalcoPayload{
 				Rule: "Mock Rule#2",
 				OutputFields: map[string]interface{}{
@@ -112,10 +159,11 @@ func TestOtlpNewTrace(t *testing.T) {
 					},
 				},
 			},
-			expectedTplStr: containerTemplateStr,
+			expectedTplStr: defaultTemplateStr,
+			mustDifferFrom: 1, // also verify that it differs from case #1 above
 		},
 		{
-			msg: "TraceIDHash config must override defaults",
+			msg: "#4 TraceIDHash config must override defaults",
 			fp: types.FalcoPayload{
 				Rule: "Mock Rule#3",
 				OutputFields: map[string]interface{}{
@@ -135,7 +183,7 @@ func TestOtlpNewTrace(t *testing.T) {
 			expectedTplStr: "{{.foo_bar}}",
 		},
 		{
-			msg: "Verify traceID is random if TraceIDHash is empty",
+			msg: "#5 Verify traceID is random if TraceIDHash is empty",
 			fp: types.FalcoPayload{
 				Rule: "Mock Rule#4",
 				OutputFields: map[string]interface{}{
@@ -153,9 +201,11 @@ func TestOtlpNewTrace(t *testing.T) {
 			},
 			expectedTplStr: "{{.foo_bar}}",
 			expectedRandom: true,
+			mustDifferFrom: 4,
 		},
 	}
-	for _, c := range cases {
+	hashArray := make([]string, len(cases))
+	for idx, c := range cases {
 
 		var err error
 		client, _ := NewClient("OTLP", "http://localhost:4317", false, false, &c.config, nil, nil, nil, nil)
@@ -193,10 +243,17 @@ func TestOtlpNewTrace(t *testing.T) {
 		require.Equal(t, c.expectedTplStr, templateStr, c.msg)
 		// Verify test case expecting a random traceID (i.e. when the template rendered to "")
 		actualTraceID := (*span).(*MockSpan).SpanContext().TraceID()
+		if c.mustDifferFrom != 0 {
+			require.NotEqual(t, hashArray[c.mustDifferFrom-1], actualTraceID.String(), c.msg)
+		}
+		if c.mustEqualto != 0 {
+			require.Equal(t, hashArray[c.mustEqualto-1], actualTraceID.String(), c.msg)
+		}
 		if c.expectedRandom {
 			require.NotEqual(t, traceID, actualTraceID, c.msg)
 		} else {
 			require.Equal(t, traceID, actualTraceID, c.msg)
 		}
+		hashArray[idx] = traceID.String()
 	}
 }
