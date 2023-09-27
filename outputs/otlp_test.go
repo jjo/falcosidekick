@@ -179,8 +179,8 @@ func TestOtlpNewTrace(t *testing.T) {
 				},
 			},
 			expectedTplStr: defaultTemplateStr,
-			mustDifferFrom: []int{1, 2}, // also verify that it differs from above cases
-			mustEqualTo:    []int{3},    // also verify that it differs from case #3 above
+			mustDifferFrom: []int{1, 2}, // also verify that it differs from 1st two cases
+			mustEqualTo:    []int{3},    // also verify that it equals to case #3 above
 		},
 		{
 			msg: "#5 TraceIDHash config must override defaults",
