@@ -19,7 +19,9 @@ To bring up the stack, and peek at how Grafana shows it:
 
 1. Bring up the stack
 
+  ```
   docker-compose up
+  ```
 
 2. Navigate to <http://localhost:3000/> to start browsing the local Grafana UI
 
@@ -29,7 +31,9 @@ To bring up the stack, and peek at how Grafana shows it:
 
 5. Bring down the stack
 
+  ```
   docker-compose down
+  ```
 
 ## Files
 
