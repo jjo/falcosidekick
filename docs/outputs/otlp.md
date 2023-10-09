@@ -19,16 +19,16 @@
 | `otlp.traces.protocol`        | `OTLP_TRACES_PROTOCOL`    | `http` (from SDK)   | OTLP Protocol                                                                                                                      |
 | `otlp.traces.timeout`         | `OTLP_TRACES_TIMEOUT`     | `10000` (from SDK)  | Timeout value in milliseconds                                                                                                      |
 | `otlp.traces.headers`         | `OTLP_TRACES_HEADERS`     |                     | List of headers to apply to all outgoing traces in the form of "some-key=some-value,other-key=other-value"                         |
-| `otlp.traces.synced`          | `OTLP_TRACES_SYNCED`      |  false              | Set to true if you want traces to be sent synchronously                                                                            |
+| `otlp.traces.synced`          | `OTLP_TRACES_SYNCED`      | `false`             | Set to `true` if you want traces to be sent synchronously                                                                          |
 | `otlp.traces.minimumpriority` | `OTLP_TRACES_MINIMUMPRIORITY` | `""` (=`debug`) | minimum priority of event for using this output, order is emergency|alert|critical|error|warning|notice|informational|debug        |
-| `otlp.traces.checkcert`       | `OTLP_TRACES_CHECKCERT`   |  false              | Set if you want to skip TLS certificate validation                                                                                 |
-| `otlp.traces.duration`        | `OTLP_TRACES_DURATION`    |  1000               | Artificial span duration in milliseconds                                                                                           |
+| `otlp.traces.checkcert`       | `OTLP_TRACES_CHECKCERT`   |  `false`            | Set if you want to skip TLS certificate validation                                                                                 |
+| `otlp.traces.duration`        | `OTLP_TRACES_DURATION`    | `1000`              | Artificial span duration in milliseconds (as Falco doesn't provide an ending timestamp)                                            |
 | `otlp.traces.traceidhash`     | `OTLP_TRACES_TRACEIDHASH` |  `{{.k8s_ns_name}}{{.k8s_pod_name}}{{.container_name}}{{.container_id}}` (all concatenated) | Trace ID Hash "seed" as gotemplate, to select fields from falcopayload output fields, should render a non-empty string else a random traceID will be used |
 
 > **Note**
 The Env var values override the settings from yaml file.
 
-Additionally, [standard `OTEL_` environment variables](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/) can be used:
+Additionally, [standard `OTEL_*` environment variables](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/) are supported:
 
 * `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` as `OTLP_TRACES_ENDPOINT`
 * `OTEL_EXPORTER_OTLP_TRACES_PROTOCOL` as `OTLP_TRACES_PROTOCOL`
