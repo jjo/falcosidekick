@@ -21,20 +21,15 @@ require (
 	github.com/jackc/pgx/v5 v5.4.3
 	github.com/nats-io/nats.go v1.30.2
 	github.com/nats-io/stan.go v0.10.4
-	github.com/prometheus/client_golang v1.16.0
 	github.com/prometheus/client_golang v1.17.0
-	github.com/rabbitmq/amqp091-go v1.8.1
 	github.com/rabbitmq/amqp091-go v1.9.0
-	github.com/redis/go-redis/v9 v9.1.0
 	github.com/redis/go-redis/v9 v9.2.1
 	github.com/samber/lo v1.38.1
-	github.com/segmentio/kafka-go v0.4.42
 	github.com/segmentio/kafka-go v0.4.43
 	github.com/spf13/viper v1.16.0
 	github.com/stretchr/testify v1.8.4
 	github.com/wavefronthq/wavefront-sdk-go v0.14.0
 	github.com/xitongsys/parquet-go v1.6.2
-	github.com/xitongsys/parquet-go-source v0.0.0-20230830030807-0dd610dbff1d
 	github.com/xitongsys/parquet-go-source v0.0.0-20230919034749-0b16411e6349
 	go.opentelemetry.io/otel v1.16.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.16.0
