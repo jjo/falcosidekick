@@ -21,9 +21,7 @@ require (
 	github.com/jackc/pgx/v5 v5.5.1
 	github.com/nats-io/nats.go v1.31.0
 	github.com/nats-io/stan.go v0.10.4
-	github.com/prometheus/client_golang v1.16.0
 	github.com/prometheus/client_golang v1.17.0
-	github.com/rabbitmq/amqp091-go v1.8.1
 	github.com/rabbitmq/amqp091-go v1.9.0
 	github.com/redis/go-redis/v9 v9.3.0
 	github.com/segmentio/kafka-go v0.4.47
@@ -31,7 +29,6 @@ require (
 	github.com/stretchr/testify v1.8.4
 	github.com/wavefronthq/wavefront-sdk-go v0.15.0
 	github.com/xitongsys/parquet-go v1.6.2
-	github.com/xitongsys/parquet-go-source v0.0.0-20230830030807-0dd610dbff1d
 	github.com/xitongsys/parquet-go-source v0.0.0-20230919034749-0b16411e6349
 	golang.org/x/oauth2 v0.15.0
 	google.golang.org/api v0.154.0
