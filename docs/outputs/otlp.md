@@ -51,11 +51,6 @@ otlp:
     # traceidhash: "" # Trace ID Hash "seed" as gotemplate, to select fields from falcopayload output fields (default: `{{.k8s_ns_name}}{{.k8s_pod_name}}{{.container_name}}{{.container_id}}` to aggregate `k8s.ns.name`, `k8s.pod.name`, `container.name`, `container.id`)
 ```
 
-## Example docker-compose
-
-At [../examples/otlp/](../examples/otlp/) you'll find an example
-`docker-compose.yaml` setup to run an example OTLP traces setup.
-
 ## Screenshots
 
 With Grafana as UI and Tempo as traces backend:
