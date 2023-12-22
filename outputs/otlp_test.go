@@ -2,12 +2,9 @@ package outputs
 
 import (
 	"context"
-	"fmt"
 	"testing"
-	"text/template"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 
 	"github.com/falcosecurity/falcosidekick/types"
@@ -94,20 +91,18 @@ func TestOtlpNewTrace(t *testing.T) {
 		msg            string
 		fp             types.FalcoPayload
 		config         types.Configuration
-		expectedTplStr string
+		expectedHash   string
 		expectedRandom bool
 		actualTraceID  trace.TraceID // save traceID for below cross-cases comparison
-		mustDifferFrom []int         // traceID must differ from cases (by idx)
-		mustEqualTo    []int         // traceID must equal to cases (by idx)
 	}{
 		{
-			msg: "#1 Kubernetes payload using defaultTemplateStr for output fields",
+			msg: "#1 Payload with Kubernetes namespace and pod names",
 			fp: types.FalcoPayload{
 				OutputFields: map[string]interface{}{
-					"k8s.ns.name":        "my-ns",
-					"k8s.pod.name":       "my-pod-name",
-					"k8s.container.name": "my-container-name",
-					"container.id":       "42",
+					"k8s.ns.name":  "my-ns",
+					"k8s.pod.name": "my-pod-name",
+					"container.id": "42",
+					"evt.hostname": "localhost",
 				},
 			},
 			config: types.Configuration{
@@ -118,18 +113,14 @@ func TestOtlpNewTrace(t *testing.T) {
 					},
 				},
 			},
-			expectedTplStr: defaultTemplateStr,
+			expectedHash: "087e7ab4196a3c4801e3c23bc1406163",
 		},
 		{
-			msg: "#2 Kubernetes payload using defaultTemplateStr with same Kubernetes fields must produce same hash",
+			msg: "#2 Payload with container ID",
 			fp: types.FalcoPayload{
 				OutputFields: map[string]interface{}{
-					"k8s.ns.name":        "my-ns",
-					"k8s.pod.name":       "my-pod-name",
-					"k8s.container.name": "my-container-name",
-					"container.id":       "42",
-					"dummy.field":        "foo",
-					"other.field":        "bar",
+					"container.id": "42",
+					"evt.hostname": "localhost",
 				},
 			},
 			config: types.Configuration{
@@ -140,14 +131,13 @@ func TestOtlpNewTrace(t *testing.T) {
 					},
 				},
 			},
-			expectedTplStr: defaultTemplateStr,
-			mustEqualTo:    []int{1}, // also verify that it equals case #1 from same rendered fields
+			expectedHash: "088094c785ab1be95aa073305569c06b",
 		},
 		{
-			msg: "#3 Container-only payload using defaultTemplateStr for output fields",
+			msg: "#3 Payload with Hostname",
 			fp: types.FalcoPayload{
 				OutputFields: map[string]interface{}{
-					"container.id": "42",
+					"evt.hostname": "localhost",
 				},
 			},
 			config: types.Configuration{
@@ -158,83 +148,15 @@ func TestOtlpNewTrace(t *testing.T) {
 					},
 				},
 			},
-			expectedTplStr: defaultTemplateStr,
-			mustDifferFrom: []int{1, 2}, // also verify that it differs from case #1 above
-		},
-		{
-			msg: "#4 Container-only payload using defaultTemplateStr must produce same hash",
-			fp: types.FalcoPayload{
-				OutputFields: map[string]interface{}{
-					"container.id": "42",
-					"dummy.field":  "foo",
-					"other.field":  "bar",
-				},
-			},
-			config: types.Configuration{
-				Debug: true,
-				OTLP: types.OTLPOutputConfig{
-					Traces: types.OTLPTraces{
-						Duration: 1000,
-					},
-				},
-			},
-			expectedTplStr: defaultTemplateStr,
-			mustDifferFrom: []int{1, 2}, // also verify that it differs from 1st two cases
-			mustEqualTo:    []int{3},    // also verify that it equals to case #3 above
-		},
-		{
-			msg: "#5 TraceIDHash config must override defaults",
-			fp: types.FalcoPayload{
-				OutputFields: map[string]interface{}{
-					"container.id": "42",
-					"foo.bar":      "101",
-				},
-			},
-			config: types.Configuration{
-				Debug: true,
-				OTLP: types.OTLPOutputConfig{
-					Traces: types.OTLPTraces{
-						Duration:    1000,
-						TraceIDHash: "{{.foo_bar}}",
-					},
-				},
-			},
-			expectedTplStr: "{{.foo_bar}}",
-			mustDifferFrom: []int{1, 2, 3, 4}, // also verify that it differs from above cases
-		},
-		{
-			msg: "#6 Verify traceID is random if TraceIDHash is empty",
-			fp: types.FalcoPayload{
-				OutputFields: map[string]interface{}{
-					"container.id": "42",
-				},
-			},
-			config: types.Configuration{
-				Debug: true,
-				OTLP: types.OTLPOutputConfig{
-					Traces: types.OTLPTraces{
-						Duration:    1000,
-						TraceIDHash: "{{.foo_bar}}",
-					},
-				},
-			},
-			expectedTplStr: "{{.foo_bar}}",
-			expectedRandom: true,
-			mustDifferFrom: []int{1, 2, 3, 4, 5}, // also verify that it differs from above cases
+			expectedHash: "b96c8fbfe005d268653aef8210412f0a",
 		},
 	}
 	for idx, c := range cases {
 		var err error
 		client, _ := NewClient("OTLP", "http://localhost:4317", false, false, &c.config, nil, nil, nil, nil)
-		// Unfortunately config.go:getConfig() is not exported, so replicate its OTLP initialization regarding TraceIDHash != ""
-		if c.config.OTLP.Traces.TraceIDHash != "" {
-			c.config.OTLP.Traces.TraceIDHashTemplate, err = template.New("").Option(templateOption).Parse(c.config.OTLP.Traces.TraceIDHash)
-			require.Nil(t, err)
-
-		}
 		// Test newTrace()
-		c.fp.UUID = uuid.New().String()
-		span := client.newTrace(c.fp)
+		span, err := client.newTrace(c.fp)
+		require.Nil(t, err)
 		require.NotNil(t, span)
 
 		// Verify SpanStartOption and SpanEndOption timestamps
@@ -251,13 +173,10 @@ func TestOtlpNewTrace(t *testing.T) {
 
 		// Verify traceID
 		// ~hack: to pass c.expectedRandom==true case, recreate fp.UUID as generateTraceID() derives from it
-		c.fp.UUID = uuid.New().String()
-		traceID, templateStr, err := generateTraceID(c.fp, &c.config)
+		traceID, err := generateTraceID(c.fp)
 		require.Nil(t, err, c.msg)
-		// Always generate a traceID (unless errored)
-		require.NotEqual(t, "", traceID.String(), c.msg)
-		// Verify expectedTplStr
-		require.Equal(t, c.expectedTplStr, templateStr, c.msg)
+		// Verify expectedHash
+		require.Equal(t, c.expectedHash, traceID.String(), c.msg)
 
 		// Verify test case expecting a random traceID (i.e. when the template rendered to "")
 		c.actualTraceID = (*span).(*MockSpan).SpanContext().TraceID()
@@ -271,16 +190,4 @@ func TestOtlpNewTrace(t *testing.T) {
 		cases[idx].actualTraceID = c.actualTraceID
 	}
 	// 2nd pass to verify cross-case traceID comparisons (equality, difference)
-	for _, c := range cases {
-		if c.mustDifferFrom != nil {
-			for _, i := range c.mustDifferFrom {
-				require.NotEqual(t, c.actualTraceID, cases[i-1].actualTraceID, fmt.Sprintf("cross-case: mustDifferFrom(#%d): %s", i, c.msg))
-			}
-		}
-		if c.mustEqualTo != nil {
-			for _, i := range c.mustEqualTo {
-				require.Equal(t, c.actualTraceID, cases[i-1].actualTraceID, fmt.Sprintf("cross-case: mustEqualTo(#%d): %s", i, c.msg))
-			}
-		}
-	}
 }

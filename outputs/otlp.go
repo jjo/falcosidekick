@@ -1,14 +1,12 @@
 package outputs
 
 import (
-	"bytes"
 	"context"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"hash/fnv"
 	"log"
-	"strings"
-	"text/template"
 	"time"
 
 	"github.com/DataDog/datadog-go/statsd"
@@ -28,19 +26,19 @@ func NewOtlpTracesClient(config *types.Configuration, stats *types.Statistics, p
 	}
 	shutDownFunc, err := otlpInit(config)
 	if err != nil {
+		log.Printf("[ERROR] : OLTP Traces - Error client creation: %v\n", err)
 		return nil, err
 	}
-	log.Printf("[INFO] : OTLP.Traces=%+v\n", config.OTLP.Traces)
+	log.Printf("[INFO]  : OTLP.Traces=%+v\n", config.OTLP.Traces)
 	otlpClient.ShutDownFunc = shutDownFunc
 	return otlpClient, nil
 }
 
 // newTrace returns a new Trace object.
-func (c *Client) newTrace(falcopayload types.FalcoPayload) *trace.Span {
-	traceID, _, err := generateTraceID(falcopayload, c.Config)
+func (c *Client) newTrace(falcopayload types.FalcoPayload) (*trace.Span, error) {
+	traceID, err := generateTraceID(falcopayload)
 	if err != nil {
-		log.Printf("[ERROR] : OLTP Traces - Error generating trace id: %v for output fields %v", err, falcopayload.OutputFields)
-		return nil
+		return nil, err
 	}
 
 	startTime := falcopayload.Time
@@ -66,14 +64,13 @@ func (c *Client) newTrace(falcopayload types.FalcoPayload) *trace.Span {
 	for k, v := range falcopayload.OutputFields {
 		span.SetAttributes(attribute.String(k, fmt.Sprintf("%v", v)))
 	}
-	// span.AddEvent("falco-event")
 	span.End(trace.WithTimestamp(endTime))
 
 	if c.Config.Debug {
 		log.Printf("[DEBUG] : OTLP Traces - payload generated successfully for traceid=%s", span.SpanContext().TraceID())
 	}
 
-	return &span
+	return &span, nil
 }
 
 // OTLPPost generates an OTLP trace _implicitly_ via newTrace() by
@@ -82,69 +79,54 @@ func (c *Client) newTrace(falcopayload types.FalcoPayload) *trace.Span {
 func (c *Client) OTLPTracesPost(falcopayload types.FalcoPayload) {
 	c.Stats.OTLPTraces.Add(Total, 1)
 
-	trace := c.newTrace(falcopayload)
-	if trace == nil {
+	_, err := c.newTrace(falcopayload)
+	if err != nil {
 		go c.CountMetric(Outputs, 1, []string{"output:otlptraces", "status:error"})
 		c.Stats.OTLPTraces.Add(Error, 1)
 		c.PromStats.Outputs.With(map[string]string{"destination": "otlptraces", "status": Error}).Inc()
-		log.Printf("[ERROR] : OLTP Traces - Error generating trace")
+		log.Printf("[ERROR] : OLTP Traces - Error generating trace: %v\n", err)
 		return
 	}
 	// Setting the success status
 	go c.CountMetric(Outputs, 1, []string{"output:otlptraces", "status:ok"})
 	c.Stats.OTLPTraces.Add(OK, 1)
 	c.PromStats.Outputs.With(map[string]string{"destination": "otlptraces", "status": OK}).Inc()
+	log.Println("[INFO]  : OLTP Traces - OK")
 }
 
-const (
-	templateOption     = "missingkey=zero"
-	defaultTemplateStr = `{{.k8s_ns_name}}{{.k8s_pod_name}}{{.container_name}}{{.container_id}}`
-)
+func generateTraceID(falcopayload types.FalcoPayload) (trace.TraceID, error) {
+	var k8sNsName, k8sPodName, containerId, evtHostname string
 
-var (
-	containerTemplate = template.Must(template.New("").Option(templateOption).Parse(defaultTemplateStr))
-)
-
-func sanitizeOutputFields(falcopayload types.FalcoPayload) map[string]interface{} {
-	ret := make(map[string]interface{})
-	for k, v := range falcopayload.OutputFields {
-		k := strings.ReplaceAll(k, ".", "_")
-		ret[k] = v
+	if falcopayload.OutputFields["k8s.ns.name"] != nil {
+		k8sNsName = falcopayload.OutputFields["k8s.ns.name"].(string)
 	}
-	return ret
-}
-
-func renderTraceIDFromTemplate(falcopayload types.FalcoPayload, config *types.Configuration) (string, string) {
-	tplStr := config.OTLP.Traces.TraceIDHash
-	tpl := config.OTLP.Traces.TraceIDHashTemplate
-	outputFields := sanitizeOutputFields(falcopayload)
-	// Default to container.id `{{.container_id}}` as templating "seed" to generate traceID.
-	if tplStr == "" {
-		tpl, tplStr = containerTemplate, defaultTemplateStr
+	if falcopayload.OutputFields["k8s.pod.name"] != nil {
+		k8sPodName = falcopayload.OutputFields["k8s.pod.name"].(string)
 	}
-	buf := &bytes.Buffer{}
-	if err := tpl.Execute(buf, outputFields); err != nil {
-		log.Printf("[WARNING] : OTLP Traces - Error expanding template: %v", err)
+	if falcopayload.OutputFields["container.id"] != nil {
+		containerId = falcopayload.OutputFields["container.id"].(string)
 	}
-	return buf.String(), tplStr
-}
-
-func generateTraceID(falcopayload types.FalcoPayload, config *types.Configuration) (trace.TraceID, string, error) {
-	var traceID trace.TraceID
-	var err error
-	traceIDStr, tplStr := renderTraceIDFromTemplate(falcopayload, config)
-
-	switch traceIDStr {
-	case "":
-	case "<no value>":
-		// Template produced no string, derive the traceID from the payload UUID
-		traceIDStr = falcopayload.UUID
+	if falcopayload.OutputFields["evt.hostname"] != nil {
+		evtHostname = falcopayload.OutputFields["evt.hostname"].(string)
 	}
-	// Hash the returned template- rendered string to generate a 32 character traceID
+
+	var traceIDStr string
+	if k8sNsName != "" && k8sPodName != "" {
+		traceIDStr = fmt.Sprintf("%v:%v", k8sNsName, k8sPodName)
+	} else if containerId != "" && containerId != "host" {
+		traceIDStr = containerId
+	} else if evtHostname != "" {
+		traceIDStr = evtHostname
+	}
+
+	if traceIDStr == "" {
+		return trace.TraceID{}, errors.New("can't find any field to generate an immutable trace id")
+	}
+
+	// Hash to return a 32 character traceID
 	hash := fnv.New128a()
 	hash.Write([]byte(traceIDStr))
 	digest := hash.Sum(nil)
-	traceIDStr = hex.EncodeToString(digest[:])
-	traceID, err = trace.TraceIDFromHex(traceIDStr)
-	return traceID, tplStr, err
+	traceIDStr = hex.EncodeToString(digest)
+	return trace.TraceIDFromHex(traceIDStr)
 }

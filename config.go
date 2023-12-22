@@ -58,22 +58,22 @@ func (defaultOS) Setenv(key, value string) error {
 
 var defOS OS = newDefaultOS()
 
-func altEnvs(envVars []string) string {
-	for _, env := range envVars {
-		var envvar, postfix string
-		split := strings.Split(env, "+")
-		switch len(split) {
-		case 1:
-			envvar = split[0]
-		case 2:
-			envvar, postfix = split[0], split[1]
-		}
-		if defOS.Getenv(envvar) != "" {
-			return defOS.Getenv(envvar) + postfix
-		}
-	}
-	return ""
-}
+// func altEnvs(envVars []string) string {
+// 	for _, env := range envVars {
+// 		var envvar, postfix string
+// 		split := strings.Split(env, "+")
+// 		switch len(split) {
+// 		case 1:
+// 			envvar = split[0]
+// 		case 2:
+// 			envvar, postfix = split[0], split[1]
+// 		}
+// 		if defOS.Getenv(envvar) != "" {
+// 			return defOS.Getenv(envvar) + postfix
+// 		}
+// 	}
+// 	return ""
+// }
 
 func getConfig() *types.Configuration {
 	c := &types.Configuration{
@@ -88,7 +88,7 @@ func getConfig() *types.Configuration {
 		Alertmanager:    types.AlertmanagerOutputConfig{ExtraLabels: make(map[string]string), ExtraAnnotations: make(map[string]string), CustomSeverityMap: make(map[types.PriorityType]string)},
 		CloudEvents:     types.CloudEventsOutputConfig{Extensions: make(map[string]string)},
 		GCP:             types.GcpOutputConfig{PubSub: types.GcpPubSub{CustomAttributes: make(map[string]string)}},
-		OTLP:            types.OTLPOutputConfig{},
+		OTLP:            types.OTLPOutputConfig{Traces: types.OTLPTraces{ExtraEnvVars: make(map[string]string)}},
 	}
 
 	configFile := kingpin.Flag("config-file", "config file").Short('c').ExistingFile()
@@ -541,22 +541,10 @@ func getConfig() *types.Configuration {
 	v.SetDefault("Dynatrace.CheckCert", true)
 	v.SetDefault("Dynatrace.MinimumPriority", "")
 
-	v.SetDefault("OTLP.Traces.Endpoint", altEnvs([]string{
-		"OTEL_EXPORTER_OTLP_TRACES_ENDPOINT",
-		"OTEL_EXPORTER_OTLP_ENDPOINT+/v1/traces",
-	}))
-	v.SetDefault("OTLP.Traces.Protocol", altEnvs([]string{
-		"OTEL_EXPORTER_OTLP_TRACES_PROTOCOL",
-		"OTEL_EXPORTER_OTLP_PROTOCOL",
-	}))
-	v.SetDefault("OTLP.Traces.Headers", altEnvs([]string{
-		"OTEL_EXPORTER_OTLP_TRACES_HEADERS",
-		"OTEL_EXPORTER_OTLP_HEADERS",
-	}))
-	v.SetDefault("OTLP.Traces.Timeout", altEnvs([]string{
-		"OTEL_EXPORTER_OTLP_TRACES_TIMEOUT",
-		"OTEL_EXPORTER_OTLP_TIMEOUT",
-	}))
+	v.SetDefault("OTLP.Traces.Endpoint", "")
+	v.SetDefault("OTLP.Traces.Protocol", "http/json")
+	v.SetDefault("OTLP.Traces.Headers", "")
+	v.SetDefault("OTLP.Traces.Timeout", 10000)
 	v.SetDefault("OTLP.Traces.Synced", false)
 	v.SetDefault("OTLP.Traces.MinimumPriority", "")
 	v.SetDefault("OTLP.Traces.CheckCert", true)
@@ -590,6 +578,7 @@ func getConfig() *types.Configuration {
 	v.GetStringMapString("AlertManager.ExtraAnnotations")
 	v.GetStringMapString("AlertManager.CustomSeverityMap")
 	v.GetStringMapString("GCP.PubSub.CustomAttributes")
+	v.GetStringMapString("OTLP.Traces.ExtraEnvVars")
 	if err := v.Unmarshal(c); err != nil {
 		log.Printf("[ERROR] : Error unmarshalling config : %s", err)
 	}
@@ -712,6 +701,21 @@ func getConfig() *types.Configuration {
 		}
 	}
 
+	if value, present := os.LookupEnv("OTLP_TRACES_EXTRAENVVARS"); present {
+		extraEnvVars := strings.Split(value, ",")
+		for _, extraEnvVarData := range extraEnvVars {
+			envName, envValue, found := strings.Cut(extraEnvVarData, ":")
+			envName, envValue = strings.TrimSpace(envName), strings.TrimSpace(envValue)
+			if !promKVNameRegex.MatchString(envName) {
+				log.Printf("[ERROR] : OTLPTraces - Extra Env Var name '%v' is not valid", envName)
+			} else if found {
+				c.OTLP.Traces.ExtraEnvVars[envName] = envValue
+			} else {
+				c.OTLP.Traces.ExtraEnvVars[envName] = ""
+			}
+		}
+	}
+
 	if c.AWS.SecurityLake.Interval < 5 {
 		c.AWS.SecurityLake.Interval = 5
 	}
@@ -830,10 +834,6 @@ func getConfig() *types.Configuration {
 	c.Mattermost.MessageFormatTemplate = getMessageFormatTemplate("Mattermost", c.Mattermost.MessageFormat)
 	c.Googlechat.MessageFormatTemplate = getMessageFormatTemplate("Googlechat", c.Googlechat.MessageFormat)
 	c.Cliq.MessageFormatTemplate = getMessageFormatTemplate("Cliq", c.Cliq.MessageFormat)
-	c.OTLP.Traces.Endpoint = strings.TrimSpace(c.OTLP.Traces.Endpoint)
-	if c.OTLP.Traces.TraceIDHash != "" {
-		c.OTLP.Traces.TraceIDHashTemplate = getMessageFormatTemplate("OTLP", c.OTLP.Traces.TraceIDHash).Option("missingkey=zero")
-	}
 
 	return c
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/falcosecurity/falcosidekick/types"
 	"go.opentelemetry.io/otel"
@@ -58,26 +59,31 @@ func installExportPipeline(config *types.Configuration, ctx context.Context) (fu
 func otlpInit(config *types.Configuration) (func(), error) {
 	// As config.OTLP.Traces fields may have been set by our own config (e.g. YAML),
 	// we need to set SDK environment variables accordingly.
-	os.Setenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", config.OTLP.Traces.Endpoint)
+	os.Setenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", strings.TrimSpace(config.OTLP.Traces.Endpoint))
 	if config.OTLP.Traces.Protocol != "" {
-		os.Setenv("OTEL_EXPORTER_OTLP_TRACES_PROTOCOL", config.OTLP.Traces.Protocol)
+		os.Setenv("OTEL_EXPORTER_OTLP_TRACES_PROTOCOL", strings.TrimSpace(config.OTLP.Traces.Protocol))
 	}
 	if config.OTLP.Traces.Headers != "" {
-		os.Setenv("OTEL_EXPORTER_OTLP_TRACES_HEADERS", config.OTLP.Traces.Headers)
+		os.Setenv("OTEL_EXPORTER_OTLP_TRACES_HEADERS", strings.TrimSpace(config.OTLP.Traces.Headers))
 	}
 	if config.OTLP.Traces.Timeout != 0 {
 		os.Setenv("OTEL_EXPORTER_OTLP_TRACES_TIMEOUT", fmt.Sprintf("%d", config.OTLP.Traces.Timeout))
+	}
+	if len(config.OTLP.Traces.ExtraEnvVars) != 0 {
+		for i, j := range config.OTLP.Traces.ExtraEnvVars {
+			os.Setenv(i, j)
+		}
 	}
 	ctx := context.Background()
 	// Registers a tracer Provider globally.
 	shutdown, err := installExportPipeline(config, ctx)
 	if err != nil {
-		log.Println(err)
 		return nil, err
 	}
 	shutDownCallback := func() {
 		if err := shutdown(ctx); err != nil {
-			log.Println(err)
+			log.Printf("[ERROR] : OLTP Traces - Error: %v\n", err)
+
 		}
 	}
 	return shutDownCallback, nil
