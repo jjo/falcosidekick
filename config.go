@@ -42,39 +42,6 @@ type OS interface {
 	Setenv(string, string) error
 }
 
-type defaultOS struct{}
-
-func newDefaultOS() *defaultOS {
-	return &defaultOS{}
-}
-
-func (defaultOS) Getenv(key string) string {
-	return os.Getenv(key)
-}
-
-func (defaultOS) Setenv(key, value string) error {
-	return os.Setenv(key, value)
-}
-
-var defOS OS = newDefaultOS()
-
-// func altEnvs(envVars []string) string {
-// 	for _, env := range envVars {
-// 		var envvar, postfix string
-// 		split := strings.Split(env, "+")
-// 		switch len(split) {
-// 		case 1:
-// 			envvar = split[0]
-// 		case 2:
-// 			envvar, postfix = split[0], split[1]
-// 		}
-// 		if defOS.Getenv(envvar) != "" {
-// 			return defOS.Getenv(envvar) + postfix
-// 		}
-// 	}
-// 	return ""
-// }
-
 func getConfig() *types.Configuration {
 	c := &types.Configuration{
 		Customfields:    make(map[string]string),
