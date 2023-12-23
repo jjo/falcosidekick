@@ -857,3 +857,20 @@ type PromStatistics struct {
 	Inputs  *prometheus.CounterVec
 	Outputs *prometheus.CounterVec
 }
+
+// OTLPOutputConfig represents config parameters for OTLP
+type OTLPTraces struct {
+	Endpoint            string
+	Protocol            string
+	Timeout             int64
+	Headers             string
+	Duration            int64
+	CheckCert           bool
+	Synced              bool
+	MinimumPriority     string
+	TraceIDHash         string
+	TraceIDHashTemplate *template.Template
+}
+type OTLPOutputConfig struct {
+	Traces OTLPTraces
+}
