@@ -764,7 +764,7 @@ type OpenObserveConfig struct {
 	CustomHeaders    map[string]string
 }
 
-// OTLPOutputConfig represents config parameters for OTLP
+// OTLPTraces represents config parameters for OTLP Traces
 type OTLPTraces struct {
 	Endpoint            string
 	Protocol            string
@@ -778,6 +778,8 @@ type OTLPTraces struct {
 	TraceIDHash         string
 	TraceIDHashTemplate *template.Template
 }
+
+// OTLPOutputConfig represents config parameters for OTLP
 type OTLPOutputConfig struct {
 	Traces OTLPTraces
 }
@@ -856,21 +858,4 @@ type PromStatistics struct {
 	Falco   *prometheus.CounterVec
 	Inputs  *prometheus.CounterVec
 	Outputs *prometheus.CounterVec
-}
-
-// OTLPOutputConfig represents config parameters for OTLP
-type OTLPTraces struct {
-	Endpoint            string
-	Protocol            string
-	Timeout             int64
-	Headers             string
-	Duration            int64
-	CheckCert           bool
-	Synced              bool
-	MinimumPriority     string
-	TraceIDHash         string
-	TraceIDHashTemplate *template.Template
-}
-type OTLPOutputConfig struct {
-	Traces OTLPTraces
 }

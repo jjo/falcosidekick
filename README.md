@@ -37,6 +37,7 @@ It works as a single endpoint for as many as you want `Falco` instances :
     - [Web](#web)
     - [SIEM](#siem)
     - [Workflow](#workflow)
+    - [Traces](#traces)
     - [Other](#other)
   - [Installation](#installation)
     - [Localhost](#localhost)
@@ -169,7 +170,7 @@ Follow the links to get the configuration of each output.
 
 ### Traces
 
-- [**OTEL Traces**](https://github.com/falcosecurity/falcosidekick/blob/master/docs/outputs/otlp.md)
+- [**OTEL Traces**](https://github.com/falcosecurity/falcosidekick/blob/master/docs/outputs/otlp_traces.md)
 
 
 ### Other
